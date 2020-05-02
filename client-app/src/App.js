@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.css';
 import {Button, Container, Row, Col, Modal} from "react-bootstrap";
-// import L from 'leaflet';
+import L from 'leaflet';
 import {Circle, Map, Marker, Popup, ScaleControl, TileLayer} from 'react-leaflet'
 // import {FaBars} from "react-icons/fa";
 import {distance, getRandomLocation} from "./helpers";
@@ -15,8 +15,10 @@ class App extends React.Component {
         targetLon: null,
         targetBearing: null,
         targetSpeed: null,
+        targetHistory: [],
         circles: [],
         showWin: false,
+        showVictory: false,
         showNewGame: false,
         zoom: 13
     };
@@ -54,8 +56,10 @@ class App extends React.Component {
         let pos = getRandomLocation(this.state.playerLat, this.state.playerLon, 500);
         this.setState({
             showWin: false,
+            showVictory: false,
             showNewGame: true,
             circles: [],
+            targetHistory: [],
             targetLat: pos.latitude,
             targetLon: pos.longitude,
             targetBearing: Math.random() * 360, // degrees
@@ -65,6 +69,7 @@ class App extends React.Component {
 
     onRadar = () => {
         let circles = this.state.circles;
+        let targetHistory = this.state.targetHistory;
         let now = new Date().getTime() / 1000;
         let secondsSinceLast = null;
         let targetLat = this.state.targetLat;
@@ -79,9 +84,8 @@ class App extends React.Component {
         }
 
         let dist = distance(this.state.playerLat, this.state.playerLon, targetLat, targetLon, 'K') * 1000;
-        console.log('dist', dist)
         if (dist < 25) {
-            this.setState({showWin: true});
+            this.setState({showVictory: true});
             localStorage.removeItem('targetLat');
             localStorage.removeItem('targetLon');
             return;
@@ -92,6 +96,10 @@ class App extends React.Component {
             lon: this.state.playerLon,
             radius: dist,
             ts: now
+        });
+        targetHistory.push({
+            lat: targetLat,
+            lon: targetLon
         });
         this.setState({
             circles: circles,
@@ -117,6 +125,16 @@ class App extends React.Component {
         //     popupAnchor: [1, -34],
         //     shadowSize: [41, 41]
         // });
+        let playerIcon = new L.Icon({
+            iconUrl: '/crosshair-24.png',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+        });
+        let targetIcon = new L.Icon({
+            iconUrl: '/cross-16.png',
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+        });
 
         return (
             <Container>
@@ -160,14 +178,20 @@ class App extends React.Component {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution="&copy; <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors"
                         />
-                        <Marker position={position}>
-                            <Popup>A pretty CSS3 popup.<br/>Easily customizable.</Popup>
-                        </Marker>
+                        <Marker position={position} icon={playerIcon}></Marker>
                         {/*{this.state.targetLat &&*/}
                         {/*    <Marker icon={targetIcon} position={[this.state.targetLat, this.state.targetLon]}>*/}
                         {/*        <Popup>Target</Popup>*/}
                         {/*    </Marker>*/}
                         {/*}*/}
+                        {this.state.showVictory &&
+                        <>
+                            {this.state.targetHistory.map((item, idx) => {
+                                return <Marker position={[item.lat, item.lon]} icon={targetIcon}/>
+                            })}
+                            {/*TODO: polyline?*/}
+                        </>
+                        }
                         {this.state.circles.map((item, idx) => {
                             let opacityFactor = this.state.circles.length - idx - 1;
                             let opacity = 1 - opacityFactor * 0.2;
@@ -183,10 +207,18 @@ class App extends React.Component {
                 </Row>
                 <Row>
                     <Col xs={9}>
-                        <Button className="btn-fullscreen" variant="primary" onClick={this.onRadar}
-                                disabled={!this.state.targetLat}>
-                            Fire Radar
-                        </Button>
+                        {this.state.showVictory ?
+                            <Button className="btn-fullscreen" variant="success" onClick={() => {
+                                this.setState({showWin: true, showVictory: false})
+                            }}>
+                                Victory!
+                            </Button>
+                            :
+                            <Button className="btn-fullscreen" variant="primary" onClick={this.onRadar}
+                                    disabled={!this.state.targetLat}>
+                                Fire Radar
+                            </Button>
+                        }
                     </Col>
                     <Col>
                         <Button className="btn-almost-fullscreen" variant="outline-dark" onClick={this.onNewGame}>
