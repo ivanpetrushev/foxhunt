@@ -9,15 +9,15 @@ import {gis} from "./gis";
 
 class App extends React.Component {
     state = {
-        player_lat: null,
-        player_lon: null,
-        target_lat: null,
-        target_lon: null,
-        target_bearing: null,
-        target_speed: null,
+        playerLat: null,
+        playerLon: null,
+        targetLat: null,
+        targetLon: null,
+        targetBearing: null,
+        targetSpeed: null,
         circles: [],
-        show_win: false,
-        show_new_game: false,
+        showWin: false,
+        showNewGame: false,
         zoom: 13
     };
 
@@ -30,18 +30,18 @@ class App extends React.Component {
         }
 
         navigator.geolocation.getCurrentPosition(function (position) {
-            me.setState({player_lat: position.coords.latitude, player_lon: position.coords.longitude});
+            me.setState({playerLat: position.coords.latitude, playerLon: position.coords.longitude});
         });
         navigator.geolocation.watchPosition(function (position) {
-            me.setState({player_lat: position.coords.latitude, player_lon: position.coords.longitude});
+            me.setState({playerLat: position.coords.latitude, playerLon: position.coords.longitude});
         });
 
         let targetLat = localStorage.getItem('targetLat');
         let targetLon = localStorage.getItem('targetLon');
         if (targetLat) {
             this.setState({
-                target_lat: targetLat,
-                target_lon: targetLon,
+                targetLat: targetLat,
+                targetLon: targetLon,
             })
         }
     }
@@ -51,15 +51,15 @@ class App extends React.Component {
     };
 
     onNewGame = () => {
-        let pos = getRandomLocation(this.state.player_lat, this.state.player_lon, 500);
+        let pos = getRandomLocation(this.state.playerLat, this.state.playerLon, 500);
         this.setState({
-            show_win: false,
-            show_new_game: true,
+            showWin: false,
+            showNewGame: true,
             circles: [],
-            target_lat: pos.latitude,
-            target_lon: pos.longitude,
-            target_bearing: Math.random() * 360, // degrees
-            target_speed: Math.random() * 2 // km/h
+            targetLat: pos.latitude,
+            targetLon: pos.longitude,
+            targetBearing: Math.random() * 360, // degrees
+            targetSpeed: Math.random() * 2 // km/h
         })
     };
 
@@ -67,36 +67,36 @@ class App extends React.Component {
         let circles = this.state.circles;
         let now = new Date().getTime() / 1000;
         let secondsSinceLast = null;
-        let targetLat = this.state.target_lat;
-        let targetLon = this.state.target_lon;
+        let targetLat = this.state.targetLat;
+        let targetLon = this.state.targetLon;
 
         if (circles.length) {
             secondsSinceLast = now - circles[circles.length - 1].ts;
-            let distanceMeters = this.state.target_speed * secondsSinceLast / 3600 * 1000;
-            let newCoord = gis.createCoord([targetLon, targetLat], this.state.target_bearing, distanceMeters);
+            let distanceMeters = this.state.targetSpeed * secondsSinceLast / 3600 * 1000;
+            let newCoord = gis.createCoord([targetLon, targetLat], this.state.targetBearing, distanceMeters);
             targetLon = newCoord[0];
             targetLat = newCoord[1];
         }
 
-        let dist = distance(this.state.player_lat, this.state.player_lon, targetLat, targetLon, 'K') * 1000;
+        let dist = distance(this.state.playerLat, this.state.playerLon, targetLat, targetLon, 'K') * 1000;
         console.log('dist', dist)
         if (dist < 25) {
-            this.setState({show_win: true});
+            this.setState({showWin: true});
             localStorage.removeItem('targetLat');
             localStorage.removeItem('targetLon');
             return;
         }
 
         circles.push({
-            lat: this.state.player_lat,
-            lon: this.state.player_lon,
+            lat: this.state.playerLat,
+            lon: this.state.playerLon,
             radius: dist,
             ts: now
         });
         this.setState({
             circles: circles,
-            target_lat: targetLat,
-            target_lon: targetLon,
+            targetLat: targetLat,
+            targetLon: targetLon,
         });
         localStorage.setItem('targetLat', targetLat);
         localStorage.setItem('targetLon', targetLon);
@@ -104,8 +104,8 @@ class App extends React.Component {
 
     render() {
         let position = [0, 0];
-        if (this.state.player_lon) {
-            position = [this.state.player_lat, this.state.player_lon];
+        if (this.state.playerLon) {
+            position = [this.state.playerLat, this.state.playerLon];
         }
 
         // icons: https://github.com/pointhi/leaflet-color-markers
@@ -120,8 +120,8 @@ class App extends React.Component {
 
         return (
             <Container>
-                <Modal show={this.state.show_win} onHide={() => {
-                    this.setState({show_win: false})
+                <Modal show={this.state.showWin} onHide={() => {
+                    this.setState({showWin: false})
                 }}>
                     <Modal.Header closeButton>
                         <Modal.Title>You won!</Modal.Title>
@@ -134,8 +134,8 @@ class App extends React.Component {
                     </Modal.Footer>
                 </Modal>
 
-                <Modal show={this.state.show_new_game} onHide={() => {
-                    this.setState({show_new_game: false})
+                <Modal show={this.state.showNewGame} onHide={() => {
+                    this.setState({showNewGame: false})
                 }}>
                     <Modal.Header closeButton>
                         <Modal.Title>New Game</Modal.Title>
@@ -149,7 +149,7 @@ class App extends React.Component {
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant="primary" onClick={() => {
-                            this.setState({show_new_game: false})
+                            this.setState({showNewGame: false})
                         }}>Go!</Button>
                     </Modal.Footer>
                 </Modal>
@@ -163,8 +163,8 @@ class App extends React.Component {
                         <Marker position={position}>
                             <Popup>A pretty CSS3 popup.<br/>Easily customizable.</Popup>
                         </Marker>
-                        {/*{this.state.target_lat &&*/}
-                        {/*    <Marker icon={targetIcon} position={[this.state.target_lat, this.state.target_lon]}>*/}
+                        {/*{this.state.targetLat &&*/}
+                        {/*    <Marker icon={targetIcon} position={[this.state.targetLat, this.state.targetLon]}>*/}
                         {/*        <Popup>Target</Popup>*/}
                         {/*    </Marker>*/}
                         {/*}*/}
@@ -184,7 +184,7 @@ class App extends React.Component {
                 <Row>
                     <Col xs={9}>
                         <Button className="btn-fullscreen" variant="primary" onClick={this.onRadar}
-                                disabled={!this.state.target_lat}>
+                                disabled={!this.state.targetLat}>
                             Fire Radar
                         </Button>
                     </Col>
