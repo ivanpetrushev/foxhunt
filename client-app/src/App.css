@@ -1,0 +1,16 @@
+.leaflet-container {
+  width: 100%;
+  height: 80vh;
+}
+
+.btn.btn-primary.btn-fullscreen {
+  width: 100%;
+  height: 10vh;
+  font-weight: bold;
+  font-size: 2em;
+}
+
+.btn.btn-almost-fullscreen {
+  width: 100%;
+  height: 10vh;
+}
