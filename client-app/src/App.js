@@ -2,7 +2,7 @@ import React from 'react';
 import './App.css';
 import {Button, Container, Row, Col, Modal} from "react-bootstrap";
 import L from 'leaflet';
-import {Circle, Map, Marker, Popup, ScaleControl, TileLayer} from 'react-leaflet'
+import {Circle, Map, Marker, ScaleControl, TileLayer} from 'react-leaflet'
 // import {FaBars} from "react-icons/fa";
 import {distance, getRandomLocation} from "./helpers";
 import {gis} from "./gis";
@@ -16,11 +16,12 @@ class App extends React.Component {
         targetBearing: null,
         targetSpeed: null,
         targetHistory: [],
+        targetDistance: null,
         circles: [],
         showWin: false,
         showVictory: false,
         showNewGame: false,
-        zoom: 13
+        zoom: 15
     };
 
     componentDidMount() {
@@ -62,9 +63,11 @@ class App extends React.Component {
             targetHistory: [],
             targetLat: pos.latitude,
             targetLon: pos.longitude,
+            targetDistance: null,
             targetBearing: Math.random() * 360, // degrees
-            targetSpeed: Math.random() * 2 // km/h
-        })
+            targetSpeed: Math.random() * 2, // km/h
+            zoom: 15
+        }, this.onRadar)
     };
 
     onRadar = () => {
@@ -105,6 +108,7 @@ class App extends React.Component {
             circles: circles,
             targetLat: targetLat,
             targetLon: targetLon,
+            targetDistance: dist,
         });
         localStorage.setItem('targetLat', targetLat);
         localStorage.setItem('targetLon', targetLon);
@@ -179,11 +183,6 @@ class App extends React.Component {
                             attribution="&copy; <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors"
                         />
                         <Marker position={position} icon={playerIcon}></Marker>
-                        {/*{this.state.targetLat &&*/}
-                        {/*    <Marker icon={targetIcon} position={[this.state.targetLat, this.state.targetLon]}>*/}
-                        {/*        <Popup>Target</Popup>*/}
-                        {/*    </Marker>*/}
-                        {/*}*/}
                         {this.state.showVictory &&
                         <>
                             {this.state.targetHistory.map((item, idx) => {
@@ -203,6 +202,7 @@ class App extends React.Component {
                             />
                         })}
                         <ScaleControl/>
+                        {this.state.targetDistance && <span className="distance">Distance: {this.state.targetDistance.toFixed(0)}m</span>}
                     </Map>
                 </Row>
                 <Row>
