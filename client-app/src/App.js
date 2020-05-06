@@ -2,7 +2,7 @@ import React from 'react';
 import './App.css';
 import {Button, Container, Row, Col, Modal} from "react-bootstrap";
 import L from 'leaflet';
-import {Circle, Map, Marker, ScaleControl, TileLayer} from 'react-leaflet'
+import {Circle, Map, Marker, Polyline, ScaleControl, TileLayer} from 'react-leaflet'
 // import {FaBars} from "react-icons/fa";
 import {distance, getRandomLocation} from "./helpers";
 import {gis} from "./gis";
@@ -11,6 +11,7 @@ class App extends React.Component {
     state = {
         playerLat: null,
         playerLon: null,
+        playerHistory: [],
         targetLat: null,
         targetLon: null,
         targetBearing: null,
@@ -36,7 +37,16 @@ class App extends React.Component {
             me.setState({playerLat: position.coords.latitude, playerLon: position.coords.longitude});
         });
         navigator.geolocation.watchPosition(function (position) {
-            me.setState({playerLat: position.coords.latitude, playerLon: position.coords.longitude});
+            let {playerHistory} = me.state;
+            let {latitude, longitude} = position.coords;
+            playerHistory.push([latitude, longitude]);
+            me.setState({
+                playerLat: latitude,
+                playerLon: longitude,
+                playerHistory: [] // Polyline is not updating unless it is completely redrawn
+            }, () => {
+                me.setState({playerHistory: playerHistory})
+            });
         });
 
         let targetLat = localStorage.getItem('targetLat');
@@ -59,6 +69,7 @@ class App extends React.Component {
             showWin: false,
             showVictory: false,
             showNewGame: true,
+            playerHistory: [],
             circles: [],
             targetHistory: [],
             targetLat: pos.latitude,
@@ -182,7 +193,7 @@ class App extends React.Component {
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution="&copy; <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors"
                         />
-                        <Marker position={position} icon={playerIcon}></Marker>
+                        <Marker position={position} icon={playerIcon} />
                         {this.state.showVictory &&
                         <>
                             {this.state.targetHistory.map((item, idx) => {
@@ -201,6 +212,9 @@ class App extends React.Component {
                                            fill={false}
                             />
                         })}
+
+                        {this.state.playerHistory.length > 2 && <Polyline positions={this.state.playerHistory} color="blue" opacity={0.3}/>}
+
                         <ScaleControl/>
                         {this.state.targetDistance && <span className="distance">Distance: {this.state.targetDistance.toFixed(0)}m</span>}
                     </Map>
